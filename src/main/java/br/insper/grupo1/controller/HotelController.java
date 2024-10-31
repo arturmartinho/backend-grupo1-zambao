@@ -1,15 +1,26 @@
 package br.insper.grupo1.controller;
 
-import br.insper.grupo1.dto.HotelDTO;
-import br.insper.grupo1.model.Hotel;
-import br.insper.grupo1.model.Cidade;
-import br.insper.grupo1.service.HotelService;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import br.insper.grupo1.dto.HotelDTO;
+import br.insper.grupo1.model.Cidade;
+import br.insper.grupo1.model.Hotel;
+import br.insper.grupo1.service.CidadeService;
+import br.insper.grupo1.service.HotelService;
 
 @RestController
 @RequestMapping("/api/hotels")
@@ -18,15 +29,18 @@ public class HotelController {
     @Autowired
     private HotelService hotelService;
 
+    @Autowired
+    private CidadeService cidadeService;
+
     @PostMapping
     public ResponseEntity<Hotel> createHotel(@RequestBody HotelDTO hotelDTO) {
-        Cidade cidade = /* Obtenha a cidade usando hotelDTO.getCidadeId() */;
+        Cidade cidade = cidadeService.getCidadeById(hotelDTO.getCidadeId());
         Hotel hotel = new Hotel(
-            hotelDTO.getNome(),
-            hotelDTO.getEndereco(),
-            hotelDTO.getCapacidade(),
-            hotelDTO.getPrecoPorDiaria(),
-            cidade
+                hotelDTO.getNome(),
+                hotelDTO.getEndereco(),
+                hotelDTO.getCapacidade(),
+                hotelDTO.getPrecoPorDiaria(),
+                cidade
         );
         Hotel createdHotel = hotelService.saveHotel(hotel);
         return new ResponseEntity<>(createdHotel, HttpStatus.CREATED);
@@ -34,23 +48,17 @@ public class HotelController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Hotel> updateHotel(@PathVariable String id, @RequestBody HotelDTO hotelDTO) {
-        Cidade cidade = /* Obtenha a cidade usando hotelDTO.getCidadeId() */;
+        Cidade cidade = cidadeService.getCidadeById(hotelDTO.getCidadeId());
         Hotel hotel = new Hotel(
-            hotelDTO.getNome(),
-            hotelDTO.getEndereco(),
-            hotelDTO.getCapacidade(),
-            hotelDTO.getPrecoPorDiaria(),
-            cidade
+                hotelDTO.getNome(),
+                hotelDTO.getEndereco(),
+                hotelDTO.getCapacidade(),
+                hotelDTO.getPrecoPorDiaria(),
+                cidade
         );
         hotel.setId(id);
         Hotel updatedHotel = hotelService.saveHotel(hotel);
         return new ResponseEntity<>(updatedHotel, HttpStatus.OK);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Hotel>> getAllHotels() {
-        List<Hotel> hotels = hotelService.getAllHotels();
-        return new ResponseEntity<>(hotels, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
@@ -59,27 +67,28 @@ public class HotelController {
         return new ResponseEntity<>(hotel, HttpStatus.OK);
     }
 
-    @GetMapping("/cidade")
-    public ResponseEntity<List<Hotel>> getHotelsByCidade(@RequestParam Cidade cidade) {
-        List<Hotel> hotels = hotelService.getHotelsByCidade(cidade);
-        return new ResponseEntity<>(hotels, HttpStatus.OK);
-    }
+    @GetMapping
+    public ResponseEntity<List<Hotel>> getAllHotels(
+            @RequestParam Optional<String> cidadeId,
+            @RequestParam Optional<String> nome,
+            @RequestParam Optional<String> endereco,
+            @RequestParam Optional<Double> precoMaximo) {
 
-    @GetMapping("/nome")
-    public ResponseEntity<List<Hotel>> getHotelsByNome(@RequestParam String nome) {
-        List<Hotel> hotels = hotelService.getHotelsByNome(nome);
-        return new ResponseEntity<>(hotels, HttpStatus.OK);
-    }
+        List<Hotel> hotels;
 
-    @GetMapping("/endereco")
-    public ResponseEntity<List<Hotel>> getHotelsByEndereco(@RequestParam String endereco) {
-        List<Hotel> hotels = hotelService.getHotelsByEndereco(endereco);
-        return new ResponseEntity<>(hotels, HttpStatus.OK);
-    }
+        if (cidadeId.isPresent()) {
+            Cidade cidade = cidadeService.getCidadeById(cidadeId.get());
+            hotels = hotelService.getHotelsByCidade(cidade);
+        } else if (nome.isPresent()) {
+            hotels = hotelService.getHotelsByNome(nome.get());
+        } else if (endereco.isPresent()) {
+            hotels = hotelService.getHotelsByEndereco(endereco.get());
+        } else if (precoMaximo.isPresent()) {
+            hotels = hotelService.getHotelsByPrecoMaximo(precoMaximo.get());
+        } else {
+            hotels = hotelService.getAllHotels();
+        }
 
-    @GetMapping("/preco")
-    public ResponseEntity<List<Hotel>> getHotelsByPrecoMaximo(@RequestParam double precoMaximo) {
-        List<Hotel> hotels = hotelService.getHotelsByPrecoMaximo(precoMaximo);
         return new ResponseEntity<>(hotels, HttpStatus.OK);
     }
 

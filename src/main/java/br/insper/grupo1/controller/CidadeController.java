@@ -28,6 +28,12 @@ public class CidadeController {
         return new ResponseEntity<>(createdCidade, HttpStatus.CREATED);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Cidade> getCidadeById(@PathVariable String id) {
+        Cidade cidade = cidadeService.getCidadeById(id);
+        return new ResponseEntity<>(cidade, HttpStatus.OK);
+    }
+
     @GetMapping
     public ResponseEntity<List<Cidade>> getAllCidades() {
         List<Cidade> cidades = cidadeService.getAllCidades();

@@ -1,14 +1,15 @@
 package br.insper.grupo1.service;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import br.insper.grupo1.exception.CidadeNotFoundException;
 import br.insper.grupo1.model.Cidade;
 import br.insper.grupo1.model.Hotel;
 import br.insper.grupo1.repository.CidadeRepository;
 import br.insper.grupo1.repository.HotelRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class CidadeService {
@@ -27,9 +28,13 @@ public class CidadeService {
         return cidadeRepository.findAll();
     }
 
+    public Cidade getCidadeById(String id) {
+        return cidadeRepository.findById(id)
+                .orElseThrow(() -> new CidadeNotFoundException("Cidade com ID " + id + " não encontrada"));
+    }
+
     public void deleteCidadeById(String id) {
-        List<Hotel> hoteisNaCidade = hotelRepository.findByCidade(cidadeRepository.findById(id)
-                .orElseThrow(() -> new CidadeNotFoundException("Cidade com ID " + id + " não encontrada")));
+        List<Hotel> hoteisNaCidade = hotelRepository.findByCidade(getCidadeById(id));
 
         if (!hoteisNaCidade.isEmpty()) {
             throw new RuntimeException("Não é possível excluir cidade com hotéis cadastrados.");
